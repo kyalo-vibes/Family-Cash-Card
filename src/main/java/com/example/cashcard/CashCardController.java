@@ -22,11 +22,16 @@ class CashCardController {
         this.cashCardRepository = cashCardRepository;
     }
 
+    //Helper method
+    private CashCard findCashCard(Long requestId, Principal principal) {
+        return cashCardRepository.findByIdAndOwner(requestId, principal.getName());
+    }
+
     @GetMapping("/{requestId}")
     private ResponseEntity<CashCard> findById(@PathVariable Long requestId, Principal principal) {
-        Optional<CashCard> cashCardOptional = Optional.ofNullable(cashCardRepository.findByIdAndOwner(requestId, principal.getName()));
-        if (cashCardOptional.isPresent()) {
-            return ResponseEntity.ok(cashCardOptional.get());
+        CashCard cashCard = findCashCard(requestId, principal);
+        if (cashCard != null) {
+            return ResponseEntity.ok(cashCard);
         } else {
             return ResponseEntity.notFound().build();
         }
@@ -43,8 +48,6 @@ class CashCardController {
         return ResponseEntity.created(locationOfNewCashCard).build();
     }
 
-
-
     @GetMapping
     private ResponseEntity<List<CashCard>> findAll(Pageable pageable, Principal principal) {
         Page<CashCard> page = cashCardRepository.findByOwner(principal.getName(),
@@ -54,5 +57,16 @@ class CashCardController {
                         pageable.getSortOr(Sort.by(Sort.Direction.ASC, "amount"))
                 ));
         return ResponseEntity.ok(page.getContent());
+    }
+
+    @PutMapping("/{requestId}")
+    private ResponseEntity<Void> updateCashCard(@PathVariable Long requestId, @RequestBody CashCard cashcardUpdate, Principal principal) {
+        CashCard cashCard = findCashCard(requestId, principal);
+        if(cashCard != null){
+            CashCard updatedCashCard = new CashCard(cashCard.id(), cashcardUpdate.amount(), cashCard.owner());
+            cashCardRepository.save(updatedCashCard);
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
     }
 }
