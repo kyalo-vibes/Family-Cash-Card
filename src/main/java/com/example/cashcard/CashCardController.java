@@ -49,14 +49,19 @@ class CashCardController {
     }
 
     @GetMapping
-    private ResponseEntity<List<CashCard>> findAll(Pageable pageable, Principal principal) {
-        Page<CashCard> page = cashCardRepository.findByOwner(principal.getName(),
-                PageRequest.of(
-                        pageable.getPageNumber(),
-                        pageable.getPageSize(),
-                        pageable.getSortOr(Sort.by(Sort.Direction.ASC, "amount"))
-                ));
-        return ResponseEntity.ok(page.getContent());
+    public Page<CashCard> getCashCardsSortedByAmount(@RequestParam(defaultValue = "0") int page,
+                                                     @RequestParam(defaultValue = "10") int size,
+                                                     @RequestParam(defaultValue = "amount") String sortBy,
+                                                     @RequestParam(defaultValue = "desc") String direction,
+                                                     Principal principal) {
+        if (!SortingUtils.isValidSortField(sortBy)) {
+            throw new IllegalArgumentException("Invalid sort field: " + sortBy);
+        }
+
+        Sort.Direction sortDirection = Sort.Direction.fromString(direction);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+
+        return cashCardRepository.findByOwner(principal.getName(), pageable);
     }
 
     @PutMapping("/{requestId}")

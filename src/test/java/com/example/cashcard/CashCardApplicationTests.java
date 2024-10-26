@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.net.URI;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.annotation.DirtiesContext.*;
@@ -84,13 +85,12 @@ class CashCardApplicationTests {
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
 		DocumentContext documentContext = JsonPath.parse(response.getBody());
-		int cashCardCount = documentContext.read("$.length()");
+		int cashCardCount = documentContext.read("$[*]", List.class).size();
 		assertThat(cashCardCount).isEqualTo(3);
-
-		JSONArray ids = documentContext.read("$..id");
+		List<Number> ids = documentContext.read("$..id");
 		assertThat(ids).containsExactlyInAnyOrder(99, 100, 101);
 
-		JSONArray amount = documentContext.read("$..amount");
+		List<Double> amount = documentContext.read("$..amount");
 		assertThat(amount).containsExactlyInAnyOrder(123.45, 1.00, 150.00);
 	}
 
@@ -241,4 +241,5 @@ class CashCardApplicationTests {
 				.getForEntity("/cashcards/99", String.class);
 		assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
 	}
+
 }
